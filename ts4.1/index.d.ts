@@ -239,23 +239,40 @@ export type TFuncReturn<
     : NormalizeReturn<T[N], KeysWithSeparator<TKPrefix, TKeys>>
   : Fallback<TDefaultResult>;
 
+type InterpolationArgs<S extends string> = S extends ''
+  ? []
+  : S extends `${string}{{${infer Arg}}}${infer RemainingString}`
+  ? [Arg, ...InterpolationArgs<RemainingString>]
+  : [];
+
 export interface TFunction<N extends Namespace = DefaultNamespace, TKPrefix = undefined> {
   <
     TKeys extends TFuncKey<N, TKPrefix> | TemplateStringsArray extends infer A ? A : never,
-    TDefaultResult extends TFunctionResult | React.ReactNode = string,
-    TInterpolationMap extends object = StringMap
+    TDefaultResult extends TFunctionResult | React.ReactNode = string
   >(
     key: TKeys | TKeys[],
-    options?: TOptions<TInterpolationMap> | string,
-  ): TFuncReturn<N, TKeys, TDefaultResult, TKPrefix>;
-  <
-    TKeys extends TFuncKey<N, TKPrefix> | TemplateStringsArray extends infer A ? A : never,
-    TDefaultResult extends TFunctionResult | React.ReactNode = string,
-    TInterpolationMap extends object = StringMap
-  >(
-    key: TKeys | TKeys[],
-    defaultValue?: string,
-    options?: TOptions<TInterpolationMap> | string,
+    ...defaultValueOrOptions: InterpolationArgs<
+      TFuncReturn<N, TKeys, TDefaultResult, TKPrefix>
+    >[number] extends never
+      ? [] | [TOptionsBase | string] | [string, TOptionsBase | string]
+      :
+          | [
+              TOptions<
+                Record<
+                  InterpolationArgs<TFuncReturn<N, TKeys, TDefaultResult, TKPrefix>>[number],
+                  string | number
+                >
+              >,
+            ]
+          | [
+              string,
+              TOptions<
+                Record<
+                  InterpolationArgs<TFuncReturn<N, TKeys, TDefaultResult, TKPrefix>>[number],
+                  string | number
+                >
+              >,
+            ]
   ): TFuncReturn<N, TKeys, TDefaultResult, TKPrefix>;
 }
 
